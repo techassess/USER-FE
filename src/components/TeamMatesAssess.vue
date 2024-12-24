@@ -1,7 +1,7 @@
 <template>
   <div class="container-fluid row justify-content-md-center align-items-center" v-if="profile">
     <!-- Left Menu -->
-    <div class="col-md-4 left-menu p-3 d-flex flex-column">
+    <div :class="leftDivClass">
       <div class="profile mb-3 d-flex align-items-center justify-content-around">
         <div class="avatar">
           <img :src="profile.fileInfo ? profile.fileInfo.fileUrl : defaultImage" alt="avatar" />
@@ -47,9 +47,9 @@
                   <button v-if="mate.isSubmitted" class="btn btn-sm btn-success btn-custom me-2" :disabled="true">
                     Đã đánh giá
                   </button>
-                  <button v-else-if="mate.isProcessing" class="btn btn-sm btn-warning btn-custom me-2" :disabled="true">
+                  <!-- <button v-else-if="mate.isProcessing" class="btn btn-sm btn-warning btn-custom me-2" :disabled="true">
                     Đang đánh giá
-                  </button>
+                  </button> -->
                   <button v-else class="btn btn-sm btn-primary btn-custom me-2" @click="selectPerson(mate)">
                     Đánh giá
                   </button>
@@ -81,7 +81,7 @@
     </div>
 
     <!-- Right Menu -->
-    <div class="col-md-8 right-menu p-4">
+    <div :class="rightDivClass">
       <component :is="isViewing ? 'TeamAssessDetailsForm' : 'TeamAssessForm'" :selectedPerson="selectedPerson"
         :userInfo="userInfo" @updateSelectedPerson="handleUpdateSelectedPerson" />
     </div>
@@ -104,6 +104,7 @@ export default {
   },
   data() {
     return {
+      isFullWidth: true,
       userInfo: null,
       profile: null,
       teamMates: [],
@@ -138,211 +139,231 @@ export default {
         return this.sortOrder === "asc" ? comparison : -comparison;
       });
     },
+    leftDivClass() {
+      return {
+        'col-md-12': this.isFullWidth,
+        'col-md-4': !this.isFullWidth,
+        'left-menu': true,
+        'p-3': true,
+        'd-flex': true,
+        'flex-column': true,
+      };
+    },
+    rightDivClass(){
+      return{
+        'col-md-0':this.wDisplay,
+        'col-md-8':!this.wDisplay,
+        'right-menu': true,
+        'p-4': true
+      }
+    }
   },
-  methods: {
-    checkRole(role) {
-      return this.userInfo.userRoles.some(
-        (usRole) => usRole.role.name === role
-      );
-    },
-    initializeUserInfo() {
-      const user = localStorage.getItem("user");
-      if (user) {
-        this.userInfo = JSON.parse(user);
-      }
-    },
-    async fetchAssessByUser() {
-      try {
-        const res = await AssessService.fetchAssessByUser(this.userInfo.id);
-        if (res && res.code === 1010) {
-          this.updateAssessmentStatus();
+    methods: {
+      checkRole(role) {
+        return this.userInfo.userRoles.some(
+          (usRole) => usRole.role.name === role
+        );
+      },
+      initializeUserInfo() {
+        const user = localStorage.getItem("user");
+        if (user) {
+          this.userInfo = JSON.parse(user);
         }
-      } catch (error) {
-        console.error("Error fetching assessments:: ", error);
-      }
-    },
-
-    async fetchTeamMates() {
-      try {
-        const loggedInUserId = this.userInfo.id;
-        const res = await UserService.fetchTeamsByUserId(loggedInUserId);
-
-        if (!res) {
-          toast.error("Bạn không đang trong dự án nào");
-          return;
+      },
+      async fetchAssessByUser() {
+        try {
+          const res = await AssessService.fetchAssessByUser(this.userInfo.id);
+          if (res && res.code === 1010) {
+            this.updateAssessmentStatus();
+          }
+        } catch (error) {
+          console.error("Error fetching assessments:: ", error);
         }
+      },
 
-        // Bảo toàn các trạng thái cũ
-        this.teamMates = res.data.map((person) => {
-          const existingMember = this.teamMates.find(
-            (mate) => mate.id === person.id
-          );
+      async fetchTeamMates() {
+        try {
+          const loggedInUserId = this.userInfo.id;
+          const res = await UserService.fetchTeamsByUserId(loggedInUserId);
 
-          return {
-            ...person,
-            isViewing: existingMember ? existingMember.isViewing : false,
-            isProcessing: existingMember ? existingMember.isProcessing : false,
-            isSubmitted: existingMember ? existingMember.isSubmitted : false,
-          };
-        });
-        const fetchProjectPromises = this.teamMates.map(async (mate) => {
-          const projectPromises = mate.userProjects.map(async (record) => {
-            const res = await ProjectService.fetchProjectById(record.projectId);
-            if (res.code === 1010) {
-              // Thay vì push vào userProjects, nên thay thế hoặc thêm vào một danh sách riêng
-              return res.data; // Trả về dữ liệu dự án
-            }
+          if (!res) {
+            toast.error("Bạn không đang trong dự án nào");
+            return;
+          }
+
+          // Bảo toàn các trạng thái cũ
+          this.teamMates = res.data.map((person) => {
+            const existingMember = this.teamMates.find(
+              (mate) => mate.id === person.id
+            );
+
+            return {
+              ...person,
+              isViewing: existingMember ? existingMember.isViewing : false,
+              isProcessing: existingMember ? existingMember.isProcessing : false,
+              isSubmitted: existingMember ? existingMember.isSubmitted : false,
+            };
+          });
+          const fetchProjectPromises = this.teamMates.map(async (mate) => {
+            const projectPromises = mate.userProjects.map(async (record) => {
+              const res = await ProjectService.fetchProjectById(record.projectId);
+              if (res.code === 1010) {
+                // Thay vì push vào userProjects, nên thay thế hoặc thêm vào một danh sách riêng
+                return res.data; // Trả về dữ liệu dự án
+              }
+            });
+
+            // Chờ tất cả các dự án được fetch xong
+            const projects = await Promise.all(projectPromises);
+            // Lọc ra các dự án hợp lệ và thêm vào userProjects
+            mate.userProjects = projects.filter(
+              (project) => project !== undefined
+            );
           });
 
-          // Chờ tất cả các dự án được fetch xong
-          const projects = await Promise.all(projectPromises);
-          // Lọc ra các dự án hợp lệ và thêm vào userProjects
-          mate.userProjects = projects.filter(
-            (project) => project !== undefined
+          await Promise.all(fetchProjectPromises);
+
+          // Gọi hàm fetchAssessByUser
+          await this.fetchAssessByUser();
+
+          // Chọn thành viên đầu tiên chưa nộp
+          const firstUnsubmitted = this.teamMates.find(
+            (person) => !person.isSubmitted
           );
-        });
 
-        await Promise.all(fetchProjectPromises);
-
-        // Gọi hàm fetchAssessByUser
-        await this.fetchAssessByUser();
-
-        // Chọn thành viên đầu tiên chưa nộp
-        const firstUnsubmitted = this.teamMates.find(
-          (person) => !person.isSubmitted
+          if (firstUnsubmitted) {
+            firstUnsubmitted.isProcessing = true;
+            this.selectedPerson = firstUnsubmitted;
+            this.profile = firstUnsubmitted;
+          }
+        } catch (error) {
+          console.error("Error fetching team members:", error);
+        }
+      },
+      updateAssessmentStatus() {
+        this.assessBy = JSON.parse(
+          localStorage.getItem("assess-by-user" + this.userInfo.id)
         );
-
-        if (firstUnsubmitted) {
-          firstUnsubmitted.isProcessing = true;
-          this.selectedPerson = firstUnsubmitted;
-          this.profile = firstUnsubmitted;
+        if (this.assessBy) {
+          this.teamMates.forEach((person) => {
+            const assess = this.assessBy.find(
+              (assess) => assess.toUserId === person.id
+            );
+            if (assess) {
+              person.isSubmitted = true;
+            }
+          });
         }
-      } catch (error) {
-        console.error("Error fetching team members:", error);
-      }
-    },
-    updateAssessmentStatus() {
-      this.assessBy = JSON.parse(
-        localStorage.getItem("assess-by-user" + this.userInfo.id)
-      );
-      if (this.assessBy) {
-        this.teamMates.forEach((person) => {
-          const assess = this.assessBy.find(
-            (assess) => assess.toUserId === person.id
-          );
-          if (assess) {
-            person.isSubmitted = true;
-          }
-        });
-      }
-    },
-    viewPerson(person) {
-      if (this.selectedPerson && this.selectedPerson.isProcessing) {
-        this.selectedPerson.isProcessing = false;
-      }
-
-      if (this.selectedPerson !== person) {
-        if (this.selectedPerson) {
-          this.selectedPerson.isViewing = false;
-        }
-        this.selectedPerson = person;
-        person.isViewing = true;
-        person.isProcessing = false;
-        this.profile = person;
-        console.log(this.isViewing);
-      } else {
-        person.isViewing = !person.isViewing;
-      }
-      this.isViewing = true;
-    },
-    selectPerson(person) {
-      if (this.listScore.length > 0) {
-        if (window.confirm("Bạn có chắc thay đổi người để đánh giá không ?")) {
-          if (window.confirm("Dữ liệu đã nhập sẽ bị xóa!")) {
-            this.selectedPerson.isProcessing = false;
-            this.clearForm();
-          }
-        }
-      }
-
-      if (this.selectedPerson && this.selectedPerson.isViewing) {
-        this.selectedPerson.isViewing = false;
-      }
-
-      if (this.selectedPerson !== person) {
-        if (this.selectedPerson) {
+      },
+      viewPerson(person) {
+        if (this.selectedPerson && this.selectedPerson.isProcessing) {
           this.selectedPerson.isProcessing = false;
         }
-        this.selectedPerson = person;
-        person.isViewing = false;
-        person.isProcessing = true;
-        this.profile = person;
-      } else {
-        // Nếu người được nhấn là cùng một người, chuyển đổi trạng thái
-        person.isProcessing = !person.isProcessing;
-      }
-      this.isViewing = false;
+
+        if (this.selectedPerson !== person) {
+          if (this.selectedPerson) {
+            this.selectedPerson.isViewing = false;
+          }
+          this.selectedPerson = person;
+          person.isViewing = true;
+          person.isProcessing = false;
+          this.profile = person;
+          console.log(this.isViewing);
+        } else {
+          person.isViewing = !person.isViewing;
+        }
+        this.isViewing = true;
+      },
+      selectPerson(person) {
+        this.isFullWidth = !this.isFullWidth;
+        this.wDisplay = !this.wDisplay;
+        if (this.listScore.length > 0) {
+          if (window.confirm("Bạn có chắc thay đổi người để đánh giá không ?")) {
+            if (window.confirm("Dữ liệu đã nhập sẽ bị xóa!")) {
+              this.selectedPerson.isProcessing = false;
+              this.clearForm();
+            }
+          }
+        }
+
+        if (this.selectedPerson && this.selectedPerson.isViewing) {
+          this.selectedPerson.isViewing = false;
+        }
+
+        if (this.selectedPerson !== person) {
+          if (this.selectedPerson) {
+            this.selectedPerson.isProcessing = false;
+          }
+          this.selectedPerson = person;
+          person.isViewing = false;
+          person.isProcessing = true;
+          this.profile = person;
+        } else {
+          // Nếu người được nhấn là cùng một người, chuyển đổi trạng thái
+          person.isProcessing = !person.isProcessing;
+        }
+        this.isViewing = false;
+      },
+      sortBy(key) {
+        if (this.sortKey === key) {
+          this.sortOrder = this.sortOrder === "asc" ? "desc" : "asc";
+        } else {
+          this.sortKey = key;
+          this.sortOrder = "asc";
+        }
+      },
+      calculateWorkTime() {
+        const userInfo = localStorage.getItem("userInfo");
+        if (userInfo && userInfo.dateJoinCompany) {
+          const joinDate = new Date(userInfo.dateJoinCompany);
+          const currentDate = new Date();
+
+          let years = currentDate.getFullYear() - joinDate.getFullYear();
+          let months = currentDate.getMonth() - joinDate.getMonth();
+          let days = currentDate.getDate() - joinDate.getDate();
+
+          if (days < 0) {
+            months--;
+            days += new Date(
+              currentDate.getFullYear(),
+              currentDate.getMonth(),
+              0
+            ).getDate();
+          }
+
+          if (months < 0) {
+            years--;
+            months += 12;
+          }
+
+          let result = [];
+
+          if (years > 0) {
+            result.push(`${years} năm`);
+          }
+          if (months > 0) {
+            result.push(`${months} tháng`);
+          }
+          if (days > 0) {
+            result.push(`${days} ngày`);
+          }
+
+          return result.length > 0 ? result.join(" ") : "Chưa xác định";
+        }
+        return "Chưa xác định";
+      },
+      handleUpdateSelectedPerson(updatedPerson) {
+        this.selectedPerson = null;
+        //update selectedPerson vào teamMates
+        const index = this.teamMates.findIndex(
+          (person) => person.id === updatedPerson.id
+        );
+        if (index !== -1) {
+          this.teamMates[index] = updatedPerson;
+        }
+      },
     },
-    sortBy(key) {
-      if (this.sortKey === key) {
-        this.sortOrder = this.sortOrder === "asc" ? "desc" : "asc";
-      } else {
-        this.sortKey = key;
-        this.sortOrder = "asc";
-      }
-    },
-    calculateWorkTime() {
-      const userInfo = localStorage.getItem("userInfo");
-      if (userInfo && userInfo.dateJoinCompany) {
-        const joinDate = new Date(userInfo.dateJoinCompany);
-        const currentDate = new Date();
-
-        let years = currentDate.getFullYear() - joinDate.getFullYear();
-        let months = currentDate.getMonth() - joinDate.getMonth();
-        let days = currentDate.getDate() - joinDate.getDate();
-
-        if (days < 0) {
-          months--;
-          days += new Date(
-            currentDate.getFullYear(),
-            currentDate.getMonth(),
-            0
-          ).getDate();
-        }
-
-        if (months < 0) {
-          years--;
-          months += 12;
-        }
-
-        let result = [];
-
-        if (years > 0) {
-          result.push(`${years} năm`);
-        }
-        if (months > 0) {
-          result.push(`${months} tháng`);
-        }
-        if (days > 0) {
-          result.push(`${days} ngày`);
-        }
-
-        return result.length > 0 ? result.join(" ") : "Chưa xác định";
-      }
-      return "Chưa xác định";
-    },
-    handleUpdateSelectedPerson(updatedPerson) {
-      this.selectedPerson = null;
-      //update selectedPerson vào teamMates
-      const index = this.teamMates.findIndex(
-        (person) => person.id === updatedPerson.id
-      );
-      if (index !== -1) {
-        this.teamMates[index] = updatedPerson;
-      }
-    },
-  },
-};
+  };
 </script>
 
 <style scoped>

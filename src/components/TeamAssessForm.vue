@@ -285,8 +285,14 @@ export default {
           toast.success("Đánh giá thành công!", {
             autoClose: 2000,
           });
+
+          // Ẩn form đi 
+          this.wDisplay = !this.wDisplay;
+
         } else {
           toast.error("Đánh giá thất bại. Vui lòng quay lại sau!");
+          return;
+
         }
         setTimeout(() => {
           window.location.reload();
