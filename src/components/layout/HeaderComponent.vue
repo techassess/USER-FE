@@ -28,7 +28,7 @@
           <nav class="site-navigation position-relative text-right" role="navigation">
             <ul class="site-menu js-clone-nav d-flex gap-2 justify-content-end mr-auto">
               <li v-for="(item, index) in filteredMenuItems" :key="index" :class="{ active: activeIndex === index }">
-                <a :href="item.link"><span>{{ item.text }}</span></a>
+                <RouterLink :to="item.link"><span>{{ item.text }}</span></RouterLink>
               </li>
               <li v-if="userInfo">
                 <div class="user-info d-flex align-items-center">
@@ -73,11 +73,15 @@
 </template>
 
 <script>
+import { RouterLink } from 'vue-router';
 import { toast } from "vue3-toastify";
 // import { jwtDecode } from "jwt-decode";
 
 export default {
   name: "HeaderComponent",
+  components:{
+    RouterLink
+  },
   data() {
     return {
       countdown: "",

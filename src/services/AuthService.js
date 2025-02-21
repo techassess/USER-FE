@@ -1,11 +1,10 @@
-import axios from "axios";
-import { InfoUrl } from "../until/InfoUrl";
+import request from '@/utils/request';
 
 const AuthService = {
     // Hàm đăng nhập
     login: async (username, password) => {
         try {
-            const response = await axios.post(`${InfoUrl}/api/auths/login`, {
+            const response = await request.post(`/api/auths/login`, {
                 username: username,
                 password: password,
             });
@@ -22,7 +21,7 @@ const AuthService = {
     // Hàm đăng ký tài khoản mới
     register: async (username, password) => {
         try {
-            const response = await axios.post(`${InfoUrl}/api/auths/register`, {
+            const response = await request.post(`/api/auths/register`, {
                 username: username,
                 password: password,
             });
@@ -39,7 +38,7 @@ const AuthService = {
     // Hàm lấy thông tin người dùng hiện tại theo tên đăng nhập
     fetchUserByUserName: async (username) => {
         try {
-            const response = await axios.get(`${InfoUrl}/api/users/current-user/${username}`);
+            const response = await request.get(`/api/users/current-user/${username}`);
             return response.data;
         } catch (error) {
             if (error.response) {
@@ -55,7 +54,7 @@ const AuthService = {
     },
     fecthUserById: async (id)=>{
         try {
-            const response = await axios.get(`${InfoUrl}/api/users/${id}`);
+            const response = await request.get(`/api/users/${id}`);
             return response.data;
         } catch (error) {
             if (error.response) {

@@ -1,9 +1,8 @@
-import axios from "axios";
-import { InfoUrl } from "../until/InfoUrl";
+import request from '@/utils/request';
 const ProjectService = {
     fetchProjectById: async (projectId) => {
         try {
-            const response = await axios.get(`${InfoUrl}/api/projects/${projectId}`);
+            const response = await request.get(`/api/projects/${projectId}`);
             return response.data;
         } catch (error) {
             console.log(error);

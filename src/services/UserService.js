@@ -1,11 +1,9 @@
-import axios from "axios";
-import { InfoUrl } from "../until/InfoUrl";
+import request from '@/utils/request';
+
 const UserService = {
   fetchTeamsByUserId: async (userId) => {
     try {
-      const response = await axios.get(
-        `${InfoUrl}/api/users/${userId}/same-project`
-      );
+      const response = await request.get(`/api/users/${userId}/same-project`);
       return response.data;
     } catch (error) {
       console.log(error);
@@ -19,20 +17,9 @@ const UserService = {
     return diffDays;
   },
   async uploadAvatar(user, formData) {
-    try {
-      const jwt = localStorage.getItem("accessToken");
-  
+    try {  
       // Gọi API PUT để upload avatar, sử dụng formData
-      const response = await axios.put(
-        `${InfoUrl}/api/users/updateUserWithAvatar/${user.id}`,
-        formData,  // Truyền formData chứa avatar
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",  // Đảm bảo gửi đúng Content-Type
-            Authorization: `Bearer ${jwt}`,
-          },
-        }
-      );
+      const response = await request.put( `/api/users/updateUserWithAvatar/${user.id}`,formData );
       return response.data;
     } catch (error) {
       console.error(error);
@@ -40,7 +27,7 @@ const UserService = {
   },  
   fetchUserById: async (userId) => {
     try {
-      const response = await axios.get(`${InfoUrl}/api/users/${userId}`);
+      const response = await request.get(`/api/users/${userId}`);
       return response.data;
     } catch (error) {
       console.log(error);
