@@ -1,23 +1,18 @@
 import { createRouter, createWebHistory } from "vue-router";
-import HomePage from "@/components/HomePage.vue";
-import TeamMatesAssess from "@/components/TeamMatesAssess.vue";
-import ProfilePage from "@/components/ProfilePage.vue";
-import AssessResult from "@/components/AssessResult.vue";
-import Personal from "@/components/PersonalAssess.vue";
-import Login from "@/components/Login.vue";
+import { AssessResultPage, HomePage, LoginPage, PersonalAssessPage, ProfilePage, TeammatesAssessPage } from "@/pages";
 import AuthService from "@/services/AuthService";
 const routes = [
   { path: "/", component: HomePage },
   {
     path: "/personal-assess",
     name: "Personal",
-    component: Personal,
+    component: PersonalAssessPage,
     meta: { requiresAuth: true }, // Chỉ cho phép truy cập nếu đã đăng nhập
   },
   {
     path: "/teammates-assess",
     name: "TeamMates",
-    component: TeamMatesAssess,
+    component: TeammatesAssessPage,
     meta: { requiresAuth: true }, // Chỉ cho phép truy cập nếu không đăng nhập
   },
   {
@@ -29,10 +24,10 @@ const routes = [
   {
     path: "/assess-result",
     name: "AssessResult",
-    component: AssessResult,
+    component: AssessResultPage,
     meta: { requiresAuth: true },
   },
-  { path: "/login", component: Login, meta: { hideHeader: true } },
+  { path: "/login", component: LoginPage, meta: { hideHeader: true } },
 ];
 
 const router = createRouter({
