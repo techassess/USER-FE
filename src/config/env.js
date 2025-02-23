@@ -1,3 +1,3 @@
 export const env = {
-  BASE_URL:process.env.VUE_APP_URL
-}
+  BASE_URL: import.meta.env.VUE_APP_URL
+} 

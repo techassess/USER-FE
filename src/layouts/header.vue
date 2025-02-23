@@ -74,7 +74,6 @@
 <script>
 import { RouterLink } from "vue-router";
 import { toast } from "vue3-toastify";
-// import { jwtDecode } from "jwt-decode";
 
 export default {
   name: "HeaderComponent",
