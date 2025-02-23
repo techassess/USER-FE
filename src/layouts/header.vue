@@ -92,6 +92,7 @@ export default {
         { text: "Đánh giá cá nhân", link: "/personal-assess" },
         { text: "Đánh giá chéo", link: "/teammates-assess" },
         // { text: "Kết quả đánh giá", link: "/assess-result" },
+        // { text: "Kết quả đánh giá", link: "/assess-result" },
       ],
       profileImage:
         "https://png.pngtree.com/png-clipart/20231216/original/pngtree-vector-office-worker-staff-avatar-employee-icon-png-image_13863941.png",
@@ -112,6 +113,7 @@ export default {
       this.checkActivePath(to.path);
       next();
     });
+
   },
   methods: {
     checkUserLoggedIn() {

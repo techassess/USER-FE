@@ -17,14 +17,19 @@ const UserService = {
     return diffDays;
   },
   async uploadAvatar(user, formData) {
-    try {  
+    try {
       // Gọi API PUT để upload avatar, sử dụng formData
-      const response = await request.put( `/api/users/updateUserWithAvatar/${user.id}`,formData );
+      const response = await request.put(`/api/users/updateUserWithAvatar/${user.id}`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",  // Đảm bảo gửi đúng Content-Type
+        },
+      });
       return response.data;
     } catch (error) {
       console.error(error);
+      console.error(error);
     }
-  },  
+  },
   fetchUserById: async (userId) => {
     try {
       const response = await request.get(`/api/users/${userId}`);
